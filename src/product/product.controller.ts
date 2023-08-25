@@ -18,6 +18,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerOptions } from 'src/config/multer.config';
 import { Response } from 'express';
+import { ProductAttributeValuePriceDto } from './dto/product-attribute-value-price.dto';
 
 @Controller('product')
 export class ProductController {
@@ -29,9 +30,14 @@ export class ProductController {
     @Res() response: Response,
     @UploadedFile() image: Express.Multer.File,
     @Body() createProductDto: CreateProductDto,
+    @Body() productAttributeValuePriceDto: ProductAttributeValuePriceDto,
   ) {
     try {
-      const product = await this.productService.create(image, createProductDto);
+      const product = await this.productService.create(
+        image,
+        createProductDto,
+        productAttributeValuePriceDto,
+      );
       return response.status(HttpStatus.CREATED).json({
         message: 'Product has been created successfully',
         product,
@@ -49,8 +55,8 @@ export class ProductController {
   }
 
   @Get()
-  findAll() {
-    return this.productService.findAll();
+  async findAll() {
+    return await this.productService.findAll();
   }
 
   @Get(':id')
@@ -59,12 +65,38 @@ export class ProductController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(+id, updateProductDto);
+  @UseInterceptors(FileInterceptor('image', multerOptions))
+  async update(
+    @Res() response: Response,
+    @Param('id') id: string,
+    @UploadedFile() image: Express.Multer.File,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    try {
+      const product = await this.productService.update(
+        id,
+        image,
+        updateProductDto,
+      );
+      return response.status(HttpStatus.CREATED).json({
+        message: 'Product has been updated successfully',
+        product,
+      });
+    } catch (err) {
+      return response.status(err.status).json(err.response);
+    }
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productService.remove(+id);
+  async remove(@Res() response: Response, @Param('id') id: string) {
+    try {
+      const category = await this.productService.remove(id);
+      return response.status(HttpStatus.OK).json({
+        message: 'Product has been successfully deleted',
+        category,
+      });
+    } catch (err) {
+      return response.status(err.status).json(err.response);
+    }
   }
 }

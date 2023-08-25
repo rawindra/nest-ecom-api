@@ -9,11 +9,13 @@ export class CreateProductDto {
   @IsString()
   description: string;
 
-  @IsNotEmpty()
+  // @IsNumber()
   @IsString()
   price: string;
 
   @IsNotEmpty()
   @IsString()
-  categoryId: string;
+  category: string;
+
+  variations: [];
 }

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -20,9 +24,6 @@ export class CategoryService {
   async findAll(): Promise<Category[]> {
     const category = await this.categoryModel.find();
 
-    if (!category || category.length == 0) {
-      throw new NotFoundException('Category not found!');
-    }
     return category;
   }
 
@@ -38,6 +39,15 @@ export class CategoryService {
     id: string,
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
+    const categoryExisintingWithSameName = await this.categoryModel.findOne({
+      _id: { $ne: id },
+      name: UpdateCategoryDto.name,
+    });
+
+    if (categoryExisintingWithSameName) {
+      throw new ConflictException(`Category already exits`);
+    }
+
     const category = await this.categoryModel.findByIdAndUpdate(
       id,
       updateCategoryDto,
